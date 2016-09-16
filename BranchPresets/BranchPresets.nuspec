@@ -9,7 +9,7 @@
     <authors>ASOS</authors>
   </metadata>
   <files>
-    <file src="bin\BranchPresets.dll" target="bin" />
+    <file src="bin\Release\BranchPresets.dll" target="bin" />
     <file src="App_Config\**" target="App_Config" />
   </files>
 </package>
