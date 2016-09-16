@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Asos.Content.Modules.PublishViewer</id>
+    <version>0.0.0</version>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>Asos Content Modules Branch Preset</tags>
+    <description>Rewrites the datasource paths when creating an item from a Sitecore branch</description>
+    <authors>ASOS</authors>
+  </metadata>
+  <files>
+    <file src="bin\Asos.Content.Modules.BranchPresets.dll" target="bin" />
+    <file src="App_Config\**" target="App_Config" />
+  </files>
+</package>
