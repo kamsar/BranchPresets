@@ -5,7 +5,7 @@
     <version>0.0.0</version>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>Asos Content Modules Branch Preset</tags>
-    <description>Rewrites the datasource paths when creating an item from a Sitecore branch</description>
+    <description>Rewrites the datasource paths for  renderings when creating an item from a Sitecore branch</description>
     <authors>ASOS</authors>
   </metadata>
   <files>
