@@ -9,7 +9,8 @@
     <authors>ASOS</authors>
   </metadata>
   <files>
-    <file src="bin\Release\BranchPresets.dll" target="bin" />
+    <file src="bin\**" target="lib\net45\" exclude="bin\**\*.xml" />
+    <file src="bin\**" target="lib\net451\" exclude="bin\**\*.xml" />
     <file src="App_Config\**" target="App_Config" />
   </files>
 </package>
