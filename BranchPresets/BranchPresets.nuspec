@@ -11,6 +11,7 @@
   <files>
     <file src="bin\**" target="lib\net45\" exclude="bin\**\*.xml" />
     <file src="bin\**" target="lib\net451\" exclude="bin\**\*.xml" />
+    <file src="bin\**" target="lib\net452\" exclude="bin\**\*.xml" />
     <file src="App_Config\Include\**" target="Content\App_Config\Include"/>
   </files>
 </package>
