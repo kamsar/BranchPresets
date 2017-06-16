@@ -16,8 +16,6 @@ namespace BranchPresets
 	{
 		public override void Process(AddFromTemplateArgs args)
 		{
-			Assert.ArgumentNotNull(args, nameof(args));
-
 			if (args.Destination.Database.Name != "master") return;
 
 			var templateItem = args.Destination.Database.GetItem(args.TemplateId);
