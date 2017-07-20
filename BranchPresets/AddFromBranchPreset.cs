@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Sitecore;
 using Sitecore.Data.Items;
 using Sitecore.Diagnostics;
@@ -30,18 +31,18 @@ namespace BranchPresets
 			Assert.HasAccess((args.Destination.Access.CanCreate() ? 1 : 0) != 0, "AddFromTemplate - Add access required (destination: {0}, template: {1})", args.Destination.ID, args.TemplateId);
 
 			// Create the branch template instance
-			Item newItem = args.Destination.Database.Engines.DataEngine.AddFromTemplate(args.ItemName, args.TemplateId, args.Destination, args.NewId);
+			var newItem = args.Destination.Database.Engines.DataEngine.AddFromTemplate(args.ItemName, args.TemplateId, args.Destination, args.NewId);
 
 			// find all rendering data sources on the branch root item that point to an item under the branch template,
 			// and repoint them to the equivalent subitem under the branch instance
-			RewriteBranchRenderingDataSources(newItem, templateItem);
+			RewriteBranchRenderingDataSources(newItem, templateItem, newItem.Paths.FullPath);
 
 			args.Result = newItem;
 		}
 
-		protected virtual void RewriteBranchRenderingDataSources(Item item, BranchItem branchTemplateItem)
+		protected virtual void RewriteBranchRenderingDataSources(Item item, BranchItem branchTemplateItem, string branchRoot)
 		{
-			string branchBasePath = branchTemplateItem.InnerItem.Paths.FullPath;
+			var branchBasePath = branchTemplateItem.InnerItem.Paths.FullPath;
 
 			LayoutHelper.ApplyActionToAllRenderings(item, rendering =>
 			{
@@ -76,6 +77,9 @@ namespace BranchPresets
 				rendering.Datasource = newTargetItem.ID.ToString();
 				return RenderingActionResult.None;
 			});
-		}
+
+		    if (!item.HasChildren) return;
+		    item.Children.ToList().ForEach(x => RewriteBranchRenderingDataSources(x, branchTemplateItem, branchRoot));
+        }
 	}
 }
