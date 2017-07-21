@@ -45,11 +45,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddFromBranchPreset.cs" />
+    <Compile Include="AddFromTemplatePresetDisabler.cs" />
+    <Compile Include="Disabler.cs" />
     <Compile Include="LayoutHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RenderingActionResult.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App_Config\Include\z_client\Client.BranchPresets.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
