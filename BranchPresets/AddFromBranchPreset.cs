@@ -2,6 +2,7 @@
 using Sitecore;
 using Sitecore.Data.Items;
 using Sitecore.Diagnostics;
+using Sitecore.Layouts;
 using Sitecore.Pipelines.ItemProvider.AddFromTemplate;
 using Sitecore.StringExtensions;
 
@@ -14,6 +15,8 @@ namespace BranchPresets
 	/// </summary>
 	public class AddFromBranchPreset : AddFromTemplateProcessor
 	{
+		private Item _branchInstanceItem;
+
 		public override void Process(AddFromTemplateArgs args)
 		{
 			Assert.ArgumentNotNull(args, nameof(args));
@@ -31,7 +34,7 @@ namespace BranchPresets
 
 			// Create the branch template instance
 			Item newItem = args.Destination.Database.Engines.DataEngine.AddFromTemplate(args.ItemName, args.TemplateId, args.Destination, args.NewId);
-
+			_branchInstanceItem = newItem;
 			// find all rendering data sources on the branch root item that point to an item under the branch template,
 			// and repoint them to the equivalent subitem under the branch instance
 			RewriteBranchRenderingDataSources(newItem, templateItem);
@@ -43,39 +46,55 @@ namespace BranchPresets
 		{
 			string branchBasePath = branchTemplateItem.InnerItem.Paths.FullPath;
 
-			LayoutHelper.ApplyActionToAllRenderings(item, rendering =>
+			LayoutHelper.ApplyActionToAllRenderings(item, rendering => RewriteRenderingDatasource(branchBasePath, item, rendering));
+
+			foreach (Item childItem in item.Children)
 			{
-				if (string.IsNullOrWhiteSpace(rendering.Datasource))
-					return RenderingActionResult.None;
+				RewriteBranchRenderingDataSources(childItem, branchTemplateItem);
+			}
+		}
 
-				// note: queries and multiple item datasources are not supported
-				var renderingTargetItem = item.Database.GetItem(rendering.Datasource);
-
-				if (renderingTargetItem == null)
-					Log.Warn("Error while expanding branch template rendering datasources: data source {0} was not resolvable.".FormatWith(rendering.Datasource), this);
-
-				// if there was no valid target item OR the target item is not a child of the branch template we skip out
-				if (renderingTargetItem == null || !renderingTargetItem.Paths.FullPath.StartsWith(branchBasePath, StringComparison.OrdinalIgnoreCase))
-					return RenderingActionResult.None;
-
-				var relativeRenderingPath = renderingTargetItem.Paths.FullPath.Substring(branchBasePath.Length).TrimStart('/');
-				relativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf('/')); // we need to skip the "/$name" at the root of the branch children
-
-				var newTargetPath = item.Paths.FullPath + relativeRenderingPath;
-
-				var newTargetItem = item.Database.GetItem(newTargetPath);
-
-				// if the target item was a valid under branch item, but the same relative path does not exist under the branch instance
-				// we set the datasource to something invalid to avoid any potential unintentional edits of a shared data source item
-				if (newTargetItem == null)
-				{
-					rendering.Datasource = "INVALID_BRANCH_SUBITEM_ID";
-					return RenderingActionResult.None;
-				}
-
-				rendering.Datasource = newTargetItem.ID.ToString();
+		protected RenderingActionResult RewriteRenderingDatasource(string branchBasePath, Item item, RenderingDefinition rendering)
+		{
+			if (string.IsNullOrWhiteSpace(rendering.Datasource))
 				return RenderingActionResult.None;
-			});
+
+			// note: queries and multiple item datasources are not supported
+			var renderingTargetItem = item.Database.GetItem(rendering.Datasource);
+
+			if (renderingTargetItem == null)
+				Log.Warn("Error while expanding branch template rendering datasources: data source {0} was not resolvable.".FormatWith(rendering.Datasource), this);
+
+			// if there was no valid target item OR the target item is not a child of the branch template we skip out
+			if (renderingTargetItem == null || !renderingTargetItem.Paths.FullPath.StartsWith(branchBasePath, StringComparison.OrdinalIgnoreCase))
+				return RenderingActionResult.None;
+
+			var relativeRenderingPath = renderingTargetItem.Paths.FullPath.Substring(branchBasePath.Length).TrimStart('/');
+			var newTargetPath = "";
+			if (item.ID.ToString() == _branchInstanceItem.ID.ToString()) // This is the branchitem instance
+			{
+				relativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf('/')); // we need to skip the "/$name" at the root of the branch children
+				newTargetPath = item.Paths.FullPath + relativeRenderingPath;
+			}
+			else // this is a subitem to the branchitem instance
+			{
+				var nameTokenSubstring = "$name/";
+				var subItemRelativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf(nameTokenSubstring) + nameTokenSubstring.Length);
+				newTargetPath = string.Format("{0}/{1}", _branchInstanceItem.Paths.FullPath, subItemRelativeRenderingPath);
+			}
+
+			var newTargetItem = item.Database.GetItem(newTargetPath);
+
+			// if the target item was a valid under branch item, but the same relative path does not exist under the branch instance
+			// we set the datasource to something invalid to avoid any potential unintentional edits of a shared data source item
+			if (newTargetItem == null)
+			{
+				rendering.Datasource = "INVALID_BRANCH_SUBITEM_ID";
+				return RenderingActionResult.None;
+			}
+
+			rendering.Datasource = newTargetItem.ID.ToString();
+			return RenderingActionResult.None;
 		}
 	}
 }
