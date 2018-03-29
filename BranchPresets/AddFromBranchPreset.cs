@@ -15,7 +15,7 @@ namespace BranchPresets
 	/// </summary>
 	public class AddFromBranchPreset : AddFromTemplateProcessor
 	{
-		private string _branchInstanceItemId;
+		private Item _branchInstanceItem;
 
 		public override void Process(AddFromTemplateArgs args)
 		{
@@ -34,7 +34,7 @@ namespace BranchPresets
 
 			// Create the branch template instance
 			Item newItem = args.Destination.Database.Engines.DataEngine.AddFromTemplate(args.ItemName, args.TemplateId, args.Destination, args.NewId);
-			_branchInstanceItemId = newItem.ID.ToString();
+			_branchInstanceItem = newItem;
 			// find all rendering data sources on the branch root item that point to an item under the branch template,
 			// and repoint them to the equivalent subitem under the branch instance
 			RewriteBranchRenderingDataSources(newItem, templateItem);
@@ -70,17 +70,18 @@ namespace BranchPresets
 				return RenderingActionResult.None;
 
 			var relativeRenderingPath = renderingTargetItem.Paths.FullPath.Substring(branchBasePath.Length).TrimStart('/');
-			if (item.ID.ToString() == _branchInstanceItemId) // This is the branchitem instance
+			var newTargetPath = "";
+			if (item.ID.ToString() == _branchInstanceItem.ID.ToString()) // This is the branchitem instance
 			{
 				relativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf('/')); // we need to skip the "/$name" at the root of the branch children
+				newTargetPath = item.Paths.FullPath + relativeRenderingPath;
 			}
 			else // this is a subitem to the branchitem instance
 			{
-				var subItemSubPath = "/" + item.Name + "/"; // the trailing / is so we dont match against other items whose name contain the subitems name.
-				relativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf(subItemSubPath) + subItemSubPath.Length - 1); // we need to skip the path before "/subitemname".
+				var nameTokenSubstring = "$name/";
+				var subItemRelativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf(nameTokenSubstring) + nameTokenSubstring.Length);
+				newTargetPath = string.Format("{0}/{1}", _branchInstanceItem.Paths.FullPath, subItemRelativeRenderingPath);
 			}
-
-			var newTargetPath = item.Paths.FullPath + relativeRenderingPath;
 
 			var newTargetItem = item.Database.GetItem(newTargetPath);
 
