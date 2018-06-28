@@ -66,8 +66,10 @@ namespace BranchPresets
 
 				var relativeRenderingPath = renderingTargetItem.Paths.FullPath.Substring(branchBasePath.Length).TrimStart('/');
 				relativeRenderingPath = relativeRenderingPath.Substring(relativeRenderingPath.IndexOf('/')); // we need to skip the "/$name" at the root of the branch children
-
-				var newTargetPath = item.Paths.FullPath + relativeRenderingPath;
+                                //Using variable replacement in case subpath includes variables/tokens
+				var fixedRelativeRenderingPath = new Sitecore.Data.MasterVariablesReplacer().Replace(relativeRenderingPath, item.Database.GetItem(branchRoot));
+                                //Use the passed branch root to determine new target path
+                                var newTargetPath = branchRoot + fixedRelativeRenderingPath;
 
 				var newTargetItem = item.Database.GetItem(newTargetPath);
 
